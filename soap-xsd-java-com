@@ -1,0 +1,491 @@
+#########################SOAP############################
+-----------------------------------------------------------------CONFIG 
+
+package com.principal.soap;
+
+import org.springframework.boot.web.servlet.ServletRegistrationBean;
+import org.springframework.context.ApplicationContext;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.core.io.ClassPathResource;
+import org.springframework.ws.config.annotation.EnableWs;
+import org.springframework.ws.config.annotation.WsConfigurerAdapter;
+import org.springframework.ws.transport.http.MessageDispatcherServlet;
+import org.springframework.ws.wsdl.wsdl11.DefaultWsdl11Definition;
+import org.springframework.xml.xsd.SimpleXsdSchema;
+import org.springframework.xml.xsd.XsdSchema;
+@EnableWs
+@Configuration
+public class Config extends WsConfigurerAdapter 
+{
+	
+
+	@Bean
+	public ServletRegistrationBean messageDispatcherServlet(ApplicationContext applicationContext) 
+	{
+		System.out.println("1.Confi "+ applicationContext);
+		MessageDispatcherServlet servlet = new MessageDispatcherServlet();
+		servlet.setApplicationContext(applicationContext);
+		servlet.setTransformWsdlLocations(true);
+		return new ServletRegistrationBean(servlet, "/service/*");
+	}
+
+	@Bean(name = "studentDetailsWsdl")
+	public DefaultWsdl11Definition defaultWsdl11Definition(XsdSchema countriesSchema) 
+	{
+		System.out.println("4.Config "+countriesSchema);
+		DefaultWsdl11Definition wsdl11Definition = new DefaultWsdl11Definition();
+		wsdl11Definition.setPortTypeName("StudentDetailsPort");
+		wsdl11Definition.setLocationUri("/service/student-details");
+		wsdl11Definition.setTargetNamespace("https://www.howtodoinjava.com/xml/school");
+		wsdl11Definition.setSchema(countriesSchema);
+		return wsdl11Definition;
+	}
+
+	@Bean
+	public XsdSchema countriesSchema() 
+	{
+		return new SimpleXsdSchema(new ClassPathResource("school.xsd"));
+	}
+}
+--------------------------------------SoapApplication
+package com.principal.soap;
+
+import org.springframework.boot.SpringApplication;
+import org.springframework.boot.autoconfigure.SpringBootApplication;
+
+@SpringBootApplication
+public class SoapApplication {
+
+	public static void main(String[] args) {
+		SpringApplication.run(SoapApplication.class, args);
+	}
+}
+------------------------------------------------StudentEndpoint
+package com.principal.soap;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.ws.server.endpoint.annotation.Endpoint;
+import org.springframework.ws.server.endpoint.annotation.PayloadRoot;
+import org.springframework.ws.server.endpoint.annotation.RequestPayload;
+import org.springframework.ws.server.endpoint.annotation.ResponsePayload;
+//import com.howtodoinjava.xml.school.StudentDetailsRequest;
+//import com.howtodoinjava.xml.school.StudentDetailsResponse;
+
+import com.principal.xml.school.StudentDetailsRequest;
+import com.principal.xml.school.StudentDetailsResponse;
+
+
+/*
+ @Endpoint registra la clase con Spring WS como un candidato potencial para procesar mensajes SOAP entrantes.
+@PayloadRoot luego es utilizado por Spring WS para elegir el método de manejo basado en el espacio de nombres del mensaje y localPart. Tenga en cuenta la solicitud de raíz del espacio de nombres y la solicitud de carga útil mencionados en esta anotación.
+@RequestPayload indica que el mensaje entrante se asignará al parámetro de solicitud del método.
+La @ResponsePayload anotación hace que Spring WS asigne el valor devuelto a la carga útil de la respuesta.
+ * */
+@Endpoint
+public class StudentEndpoint 
+{
+
+	private static final String NAMESPACE_URI = "https://www.howtodoinjava.com/xml/school";
+
+
+	private StudentRepository StudentRepository;
+	
+	@Autowired
+	public StudentEndpoint(StudentRepository StudentRepository) {
+		System.out.println("2.StudentPoint "+StudentRepository);
+		this.StudentRepository = StudentRepository;
+	}
+
+	@PayloadRoot(namespace = NAMESPACE_URI, localPart = "StudentDetailsRequest")
+	@ResponsePayload
+	public StudentDetailsResponse getStudent(@RequestPayload StudentDetailsRequest request) {
+		System.out.println("3.StudentPoint "+request);
+		StudentDetailsResponse response = new StudentDetailsResponse();
+		response.setStudent(StudentRepository.findStudent(request.getName()));
+
+		return response;
+	}
+}
+--------------------------------------------------StudentRepository
+
+package com.principal.soap;
+
+import java.util.HashMap;
+import java.util.Map;
+import javax.annotation.PostConstruct;
+import org.springframework.stereotype.Component;
+import org.springframework.util.Assert;
+
+import com.principal.xml.school.Student;
+//import com.howtodoinjava.xml.school.Student;
+
+@Component
+public class StudentRepository {
+	private static final Map<String, Student> students = new HashMap<>();
+
+	@PostConstruct
+	public void initData() {
+		System.out.println("5.StudentRepository, new Estudiante ");
+		Student student = new Student();
+		student.setName("Juan");
+		student.setStandard(5);
+		student.setAddress("Lima");
+		students.put(student.getName(), student);
+		
+		student = new Student();
+		student.setName("Miguel");
+		student.setStandard(5);
+		student.setAddress("Puno");
+		students.put(student.getName(), student);
+		
+		student = new Student();
+		student.setName("Lokesh");
+		student.setStandard(6);
+		student.setAddress("Arequipa");
+		students.put(student.getName(), student);
+		
+		student = new Student();
+		student.setName("Maria");
+		student.setStandard(7);
+		student.setAddress("Madre de Dios");
+		students.put(student.getName(), student);
+	}
+
+	public Student findStudent(Object name) {
+		System.out.println("Error");
+		Assert.notNull(name, "El nombre del Estudiante no debe ser nulo");
+		return students.get(name);
+	}
+}
+
+#########################XML############################
+-------------------SCHOOL
+-----------ObjectFactory
+package com.principal.xml.school;
+
+
+import javax.xml.bind.annotation.XmlRegistry;
+
+
+/**
+ * This object contains factory methods for each 
+ * Java content interface and Java element interface 
+ * generated in the com.howtodoinjava.xml.school package. 
+ * <p>An ObjectFactory allows you to programatically 
+ * construct new instances of the Java representation 
+ * for XML content. The Java representation of XML 
+ * content can consist of schema derived interfaces 
+ * and classes representing the binding of schema 
+ * type definitions, element declarations and model 
+ * groups.  Factory methods for each of these are 
+ * provided in this class.
+ * 
+ * 
+Este objeto contiene métodos de fábrica para cada interfaz de contenido Java
+y la interfaz de elementos Java generada en el paquete com.howtodoinjava.xml.school.
+ * <p> Un ObjectFactory le permite programáticamente
+ * construir nuevas instancias de la representación de Java para el contenido XML.
+ * La representación de Java del contenido XML puede consistir en interfaces 
+ * y clases derivadas de esquemas que representan el enlace de definiciones 
+ * de tipos de esquema, declaraciones de elementos y grupos de modelos. 
+ * Los métodos de fábrica para cada uno de estos se proporcionan en esta clase
+ */
+@XmlRegistry
+public class ObjectFactory {
+	/**
+ * Create a new ObjectFactory that can be used to create new instances of schema derived classes for package: com.howtodoinjava.xml.school
+ * Cree una nueva ObjectFactory que se pueda usar para crear nuevas instancias de clases derivadas de esquema para el paquete: com.howtodoinjava.xml.school
+     */
+    public ObjectFactory() {
+    }
+
+    /**
+     * Create an instance of {@link StudentDetailsResponse }
+     * 
+     */
+    public StudentDetailsResponse createStudentDetailsResponse() {
+        return new StudentDetailsResponse();
+    }
+
+    /**
+     * Create an instance of {@link Student }
+     * 
+     */
+    public Student createStudent() {
+        return new Student();
+    }
+
+    /**
+     * Create an instance of {@link StudentDetailsRequest }
+     * 
+     */
+    public StudentDetailsRequest createStudentDetailsRequest() {
+        return new StudentDetailsRequest();
+    }
+
+}
+-----------------------------------------------------package-info
+//
+// This file was generated by the JavaTM Architecture for XML Binding(JAXB) Reference Implementation, v2.2.7 
+// See <a href="http://java.sun.com/xml/jaxb">http://java.sun.com/xml/jaxb</a> 
+// Any modifications to this file will be lost upon recompilation of the source schema. 
+// Generated on: 2017.10.04 at 09:39:10 PM IST 
+//
+
+@javax.xml.bind.annotation.XmlSchema(namespace = "http://www.howtodoinjava.com/xml/school", elementFormDefault = javax.xml.bind.annotation.XmlNsForm.QUALIFIED)
+package com.principal.xml.school;
+-----------------------------------------------Student
+package com.principal.xml.school;
+
+
+import javax.xml.bind.annotation.XmlAccessType;
+import javax.xml.bind.annotation.XmlAccessorType;
+import javax.xml.bind.annotation.XmlElement;
+import javax.xml.bind.annotation.XmlType;
+
+
+/**
+ * <p>Java class for Student complex type.
+ * 
+ * <p>The following schema fragment specifies the expected content contained within this class.
+ * 
+ * <pre>
+ * &lt;complexType name="Student">
+ *   &lt;complexContent>
+ *     &lt;restriction base="{http://www.w3.org/2001/XMLSchema}anyType">
+ *       &lt;sequence>
+ *         &lt;element name="name" type="{http://www.w3.org/2001/XMLSchema}string"/>
+ *         &lt;element name="standard" type="{http://www.w3.org/2001/XMLSchema}int"/>
+ *         &lt;element name="address" type="{http://www.w3.org/2001/XMLSchema}string"/>
+ *       &lt;/sequence>
+ *     &lt;/restriction>
+ *   &lt;/complexContent>
+ * &lt;/complexType>
+ * </pre>
+ * 
+ * 
+ */
+@XmlAccessorType(XmlAccessType.FIELD)
+@XmlType(name = "Student", propOrder = {
+    "name",
+    "standard",
+    "address"
+})
+public class Student {
+
+    @XmlElement(required = true)
+    protected String name;
+    protected int standard;
+    @XmlElement(required = true)
+    protected String address;
+
+    /**
+     * Gets the value of the name property.
+     * 
+     * @return
+     *     possible object is
+     *     {@link String }
+     *     
+     */
+    public String getName() {
+        return name;
+    }
+
+    /**
+     * Sets the value of the name property.
+     * 
+     * @param value
+     *     allowed object is
+     *     {@link String }
+     *     
+     */
+    public void setName(String value) {
+        this.name = value;
+    }
+
+    /**
+     * Gets the value of the standard property.
+     * 
+     */
+    public int getStandard() {
+        return standard;
+    }
+
+    /**
+     * Sets the value of the standard property.
+     * 
+     */
+    public void setStandard(int value) {
+        this.standard = value;
+    }
+
+    /**
+     * Gets the value of the address property.
+     * 
+     * @return
+     *     possible object is
+     *     {@link String }
+     *     
+     */
+    public String getAddress() {
+        return address;
+    }
+
+    /**
+     * Sets the value of the address property.
+     * 
+     * @param value
+     *     allowed object is
+     *     {@link String }
+     *     
+     */
+    public void setAddress(String value) {
+        this.address = value;
+    }
+
+}
+-----------------------------------StudentDetailsRequest
+package com.principal.xml.school;
+
+
+import javax.xml.bind.annotation.XmlAccessType;
+import javax.xml.bind.annotation.XmlAccessorType;
+import javax.xml.bind.annotation.XmlElement;
+import javax.xml.bind.annotation.XmlRootElement;
+import javax.xml.bind.annotation.XmlType;
+
+
+/**
+ * <p>Java class for anonymous complex type.
+ * 
+ * <p>The following schema fragment specifies the expected content contained within this class.
+ * 
+ * <pre>
+ * &lt;complexType>
+ *   &lt;complexContent>
+ *     &lt;restriction base="{http://www.w3.org/2001/XMLSchema}anyType">
+ *       &lt;sequence>
+ *         &lt;element name="name" type="{http://www.w3.org/2001/XMLSchema}string"/>
+ *       &lt;/sequence>
+ *     &lt;/restriction>
+ *   &lt;/complexContent>
+ * &lt;/complexType>
+ * </pre>
+ * 
+ * 
+ */
+@XmlAccessorType(XmlAccessType.FIELD)
+@XmlType(name = "", propOrder = {
+    "name"
+})
+@XmlRootElement(name = "StudentDetailsRequest")
+public class StudentDetailsRequest {
+
+    @XmlElement(required = true)
+    protected String name;
+
+    /**
+     * Gets the value of the name property.
+     * 
+     * @return
+     *     possible object is
+     *     {@link String }
+     *     
+     */
+    public String getName() {
+        return name;
+    }
+
+    /**
+     * Sets the value of the name property.
+     * 
+     * @param value
+     *     allowed object is
+     *     {@link String }
+     *     
+     */
+    public void setName(String value) {
+        this.name = value;
+    }
+
+}
+-----------------------------------------------------StudentDetailsResponse
+package com.principal.xml.school;
+
+import javax.xml.bind.annotation.XmlAccessType;
+import javax.xml.bind.annotation.XmlAccessorType;
+import javax.xml.bind.annotation.XmlElement;
+import javax.xml.bind.annotation.XmlRootElement;
+import javax.xml.bind.annotation.XmlType;
+
+
+/**
+ * <p>Java class for anonymous complex type.
+ * 
+ * <p>El siguiente fragmento de esquema especifica el contenido esperado contenido dentro de esta clase.
+ * 
+ * <pre>
+ * &lt;complexType>
+ *   &lt;complexContent>
+ *     &lt;restriction base="{http://www.w3.org/2001/XMLSchema}anyType">
+ *       &lt;sequence>
+ *         &lt;element name="Student" type="{http://www.howtodoinjava.com/xml/school}Student"/>
+ *       &lt;/sequence>
+ *     &lt;/restriction>
+ *   &lt;/complexContent>
+ * &lt;/complexType>
+ * </pre>
+ * 
+ * 
+ */
+/*
+@XmlAccessorType(XmlAccessType.FIELD)
+@XmlType(name = "bookdata", propOrder = {
+    "author",
+    "title",
+    "genre",
+    "price",
+    "publishDate",
+    "description"
+})
+ * */
+
+@XmlAccessorType(XmlAccessType.FIELD)/*@XmlAccessorType: Genera un xml apartir de una clase JAVA existente*/
+@XmlType(name = "", propOrder = {
+    "student"
+})
+/* Anotación de clase que indica que esta participa para ser tratada por JAXB. En ella se puede cambiar 
+ el nombre del root del XML resultante y además agregar un namespace*/
+@XmlRootElement(name = "StudentDetailsResponse")
+public class StudentDetailsResponse {
+/*@XmlType, @XmlElement, etc. Estas anotaciones son propias de jaxb y son las que necesitará jaxb para luego saber 
+ * convertir una instancia de nuestra clase java en su equivalente XML y viceversa*/
+    @XmlElement(name = "Student", required = true)
+    protected Student student;
+
+    /**
+     * Gets el valor de la propiedad del estudiante.
+     * 
+     * @return
+     *     possible object is
+     *     {@link Student }
+     *     
+     */
+    public Student getStudent() {
+        return student;
+    }
+
+    /**
+     * Sets el valor de la propiedad del estudiante.
+     * 
+     * @param value
+     *     allowed object is
+     *     {@link Student }
+     *     
+     */
+    public void setStudent(Student value) {
+        this.student = value;
+    }
+
+}
