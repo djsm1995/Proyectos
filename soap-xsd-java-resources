@@ -1,0 +1,234 @@
+--------------------------banner.txt
+'##::::'##::'#######::'##:::::'##::::'########::'#######:::::'########:::'#######:::::'####:'##::: ##::::::::::'##::::'###::::'##::::'##::::'###::::
+ ##:::: ##:'##.... ##: ##:'##: ##::::... ##..::'##.... ##:::: ##.... ##:'##.... ##::::. ##:: ###:: ##:::::::::: ##:::'## ##::: ##:::: ##:::'## ##:::
+ ##:::: ##: ##:::: ##: ##: ##: ##::::::: ##:::: ##:::: ##:::: ##:::: ##: ##:::: ##::::: ##:: ####: ##:::::::::: ##::'##:. ##:: ##:::: ##::'##:. ##::
+ #########: ##:::: ##: ##: ##: ##::::::: ##:::: ##:::: ##:::: ##:::: ##: ##:::: ##::::: ##:: ## ## ##:::::::::: ##:'##:::. ##: ##:::: ##:'##:::. ##:
+ ##.... ##: ##:::: ##: ##: ##: ##::::::: ##:::: ##:::: ##:::: ##:::: ##: ##:::: ##::::: ##:: ##. ####::::'##::: ##: #########:. ##:: ##:: #########:
+ ##:::: ##: ##:::: ##: ##: ##: ##::::::: ##:::: ##:::: ##:::: ##:::: ##: ##:::: ##::::: ##:: ##:. ###:::: ##::: ##: ##.... ##::. ## ##::: ##.... ##:
+ ##:::: ##:. #######::. ###. ###:::::::: ##::::. #######::::: ########::. #######:::::'####: ##::. ##::::. ######:: ##:::: ##:::. ###:::: ##:::: ##:
+..:::::..:::.......::::...::...:::::::::..::::::.......::::::........::::.......::::::....::..::::..::::::......:::..:::::..:::::...:::::..:::::..::
+
+
+----------------------------------school.xsd
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema" xmlns:tns="http://www.howtodoinjava.com/xml/school"
+           targetNamespace="http://www.howtodoinjava.com/xml/school" elementFormDefault="qualified">
+
+    <xs:element name="StudentDetailsRequest">
+        <xs:complexType>
+            <xs:sequence>
+                <xs:element name="name" type="xs:string"/>
+            </xs:sequence>
+        </xs:complexType>
+    </xs:element>
+
+    <xs:element name="StudentDetailsResponse">
+        <xs:complexType>
+            <xs:sequence>
+                <xs:element name="Student" type="tns:Student"/>
+            </xs:sequence>
+        </xs:complexType>
+    </xs:element>
+
+    <xs:complexType name="Student">
+        <xs:sequence>
+            <xs:element name="name" type="xs:string"/>
+            <xs:element name="standard" type="xs:int"/>
+            <xs:element name="address" type="xs:string"/>
+        </xs:sequence>
+    </xs:complexType>
+    
+</xs:schema>
+
+----------------------------------CONCEPTOS BASICOS
+
+@ComponentScan - use para escanear los componentes. En este ejemplo, los controladores y 
+servicios no se pueden identificar si no definimos la ruta de exploración del componente.
+@EnableJpaRepositories - use para identificar los repositorios.
+@EntityScan: uso para entidades identificadas.
+
+EJEMPLO:
+		@SpringBootApplication
+		@ComponentScan(basePackages = "com.mydevgeek")
+		@EnableJpaRepositories(basePackages = "com.mydevgeek.repo")
+		@EntityScan(basePackages = "com.mydevgeek.domain")
+		public class Application {
+		 
+		    public static void main(String[] args) {
+		        SpringApplication.run(Application.class, args);
+		    }
+		}
+
+@SpringBootApplication - Esta anotación detecta automáticamente todos los atributos @Entity, @Repository, @ Controller / @RestController, @Service y @Component. Pero todos los componentes deben estar en el mismo nivel o en el paquete hijo. En este ejemplo, la aplicación.
+java separa el paquete de modo que tenemos que definir explícitamente el dominio, el repositorio y los controladores.
+aquí el ejemplo con explícitamente define paquetes.		
+	
+	EJEMPLO:
+		@SpringBootApplication
+		@ComponentScan(basePackages = "com.mydevgeek")
+		@EnableJpaRepositories(basePackages = "com.mydevgeek.repo")
+		@EntityScan(basePackages = "com.mydevgeek.domain")
+		public class Application {
+		 
+		    public static void main(String[] args) {
+		        SpringApplication.run(Application.class, args);
+		    }
+		}
+		
+CrudRepository: proporciona funcionalidades crud básicas.
+JpaRepository: proporciona funcionalidades relacionadas con JPA como persistir, eliminar, eliminar por lotes, etc.
+PagingAndSortingRepository: proporciona funcionalidades adicionales, como paginación y clasificación.
+
+
+@Component - (Spring Documentation) Esta es una anotación de estereotipo de propósito general que indica que la 
+clase es un componente de primavera. Esto se creará en una instancia de Singleton. Eso también es adecuado para esta tarea.
+Si desea crear una nueva instancia de clase cada vez que la necesita, use esta anotación con @Component
+	EJEMPLO: 
+		@Componente
+		@Scope ("prototipo")
+		
+--------------------------------------------------------------------
+
+Use RequestMethod.GET para obtener algunos datos.
+Use RequestMethod.POST para crear nuevos datos.
+Use RequestMethod.PUT para modificar los datos.
+Use RequestMethod.DELETE para eliminar datos.
+Finalmente, como práctica, no llame directamente al Repositorio. Cada vez que llame a través de la capa de servicio.
+
+		-------------------------------------------------- URL 
+    
+    https://howtodoinjava.com/spring/spring-boot/spring-boot-soap-webservice-example/
+
+http://localhost:8080/service/studentDetailsWsdl.wsdl
+----------------------------------POM.XML
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+	<modelVersion>4.0.0</modelVersion>
+
+	<groupId>com.principal</groupId>
+	<artifactId>soap</artifactId>
+	<version>0.0.1-SNAPSHOT</version>
+	<packaging>jar</packaging>
+
+	<name>soap</name>
+	<description>Demo project for Spring Boot</description>
+
+	<parent>
+		<groupId>org.springframework.boot</groupId>
+		<artifactId>spring-boot-starter-parent</artifactId>
+		<version>2.0.1.RELEASE</version>
+		<relativePath/> <!-- lookup parent from repository -->
+	</parent>
+
+	<properties>
+		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+		<project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
+		<java.version>1.8</java.version>
+	</properties>
+
+	<dependencies>
+
+		<dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-starter-test</artifactId>
+			<scope>test</scope>
+		</dependency>
+	
+		<dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-starter-web</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-starter-web-services</artifactId>
+		</dependency>
+
+		
+		
+		
+		
+		<!-- SOAP -->
+		<!-- https://mvnrepository.com/artifact/wsdl4j/wsdl4j -->
+		<dependency>
+		    <groupId>wsdl4j</groupId>
+		    <artifactId>wsdl4j</artifactId>
+		</dependency>
+		
+		
+		
+	</dependencies>
+
+	<build>
+		<plugins>
+			<plugin>
+				<groupId>org.springframework.boot</groupId>
+				<artifactId>spring-boot-maven-plugin</artifactId>
+			</plugin> 
+			
+<!-- SOAP -->
+			<plugin>
+				<groupId>org.codehaus.mojo</groupId>
+				<artifactId>jaxb2-maven-plugin</artifactId>
+			<!-- 	<version>1.6</version> -->
+				<executions>
+				
+					 <!-- <execution>
+						<id>xjc</id>
+						<goals>
+							<goal>xjc</goal>
+						</goals>
+					</execution>  -->
+					
+				</executions>
+				<configuration>
+					<schemaDirectory>${project.basedir}/src/main/resources/</schemaDirectory>
+					<outputDirectory>${project.basedir}/src/main/java</outputDirectory>
+					<clearOutputDir>false</clearOutputDir>
+				</configuration>
+			</plugin>
+<!-- SOAP -->
+		</plugins>
+	</build>
+	
+	
+	<repositories>
+		<repository>
+			<id>spring-snapshots</id>
+			<name>Spring Snapshots</name>
+			<url>https://repo.spring.io/snapshot</url>
+			<snapshots>
+				<enabled>true</enabled>
+			</snapshots>
+		</repository>
+		<repository>
+			<id>spring-milestones</id>
+			<name>Spring Milestones</name>
+			<url>https://repo.spring.io/milestone</url>
+			<snapshots>
+				<enabled>false</enabled>
+			</snapshots>
+		</repository>
+	</repositories>
+
+	<pluginRepositories>
+		<pluginRepository>
+			<id>spring-snapshots</id>
+			<name>Spring Snapshots</name>
+			<url>https://repo.spring.io/snapshot</url>
+			<snapshots>
+				<enabled>true</enabled>
+			</snapshots>
+		</pluginRepository>
+		<pluginRepository>
+			<id>spring-milestones</id>
+			<name>Spring Milestones</name>
+			<url>https://repo.spring.io/milestone</url>
+			<snapshots>
+				<enabled>false</enabled>
+			</snapshots>
+		</pluginRepository>
+	</pluginRepositories>
+	
+
+
+</project>
